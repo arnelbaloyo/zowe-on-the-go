@@ -53,8 +53,8 @@ export class AuthService {
   checkToken() {
     this.storage.get(TOKEN_KEY).then(token => {
       if (token) {
-        let decoded = this.helper.decodeToken(token);
-        let isExpired = this.helper.isTokenExpired(token);
+        const decoded = this.helper.decodeToken(token);
+        const isExpired = this.helper.isTokenExpired(token);
 
         if (!isExpired) {
           this.user = decoded;
@@ -71,37 +71,65 @@ export class AuthService {
 
     this.load();
 
-    return this.http.post(`${credentials.url}/api/v1/gateway/auth/login`, JSON.stringify(credentials), {observe: 'response'})
-      .pipe(
-        tap(res => {
-          console.log('im in', res);
-          this.loadingController.dismiss();
-          if (!res.ok) {
-            console.log('res:', res);
-            this.showAlert('Response not 2xx!');
-            console.error('Response not 2xx');
-            return throwError;
-          }
-          environment.zosURL = credentials.url;
-          environment.user = credentials.username;
-          environment.pass = credentials.password;
-          this.showGetStarted('Welcome to Zowe Mobile Application!');
-          this.authenticationState.next(true);
-        }),
-        catchError(e => {
-          console.log('err', e);
-          const status = e.status;
-          this.loadingController.dismiss();
-          // if (status === 0) {
-          //   console.log ('Allow this for now... Status:', status);
-          //   this.authenticationState.next(true);
-          // } else {
-          console.log('err stat: ', status);
-          this.showAlert('You are not authorized for this!');
-          return throwError(e);
-          // }
-        })
-      );
+    if (credentials.url.includes('api/v1')) {
+      return this.http.post(`${credentials.url}/gateway/auth/login`, JSON.stringify(credentials), {observe: 'response'})
+        .pipe(
+          tap(res => {
+            console.log('im in', res);
+            this.loadingController.dismiss();
+            if (!res.ok) {
+              console.log('res:', res);
+              this.showAlert('Response not 2xx!');
+              console.error('Response not 2xx');
+              return throwError;
+            }
+            environment.zosURL = credentials.url;
+            environment.user = credentials.username;
+            environment.pass = credentials.password;
+            this.showGetStarted('Welcome to Zowe Mobile Application!');
+            this.authenticationState.next(true);
+          }),
+          catchError(e => {
+            console.log('err', e);
+            const status = e.status;
+            this.loadingController.dismiss();
+            // if (status === 0) {
+            //   console.log ('Allow this for now... Status:', status);
+            //   this.authenticationState.next(true);
+            // } else {
+            console.log('err stat: ', status);
+            this.showAlert('You are not authorized for this!');
+            return throwError(e);
+            // }
+          })
+        );
+    } else {
+        // return this.http.get(`${credentials.url}/zosmf/info`, {observe: 'response'}).pipe(
+        //   tap(res => {
+        //     console.log('im in', res);
+        //     this.loadingController.dismiss();
+        //     if (!res.ok) {
+        //       console.log('res:', res);
+        //       this.showAlert('Response not 2xx!');
+        //       console.error('Response not 2xx');
+        //       return throwError;
+        //     }
+        environment.zosURL = credentials.url;
+        environment.user = credentials.username;
+        environment.pass = credentials.password;
+        this.showGetStarted('Welcome to Zowe Mobile Application!');
+        this.authenticationState.next(true);
+          // }),
+        // catchError(e => {
+        //   const status = e.status;
+        //   console.log(status);
+        //   if (status === 401) {
+        //     this.showAlert('You are not authorized for this!');
+        //     this.logout();
+        //   }
+        //   throw new Error(e);
+        // })
+    }
   }
 
   logout() {
@@ -116,7 +144,7 @@ export class AuthService {
   getSpecialData() {
     return this.http.get(`${environment.zosURL}/api/v1//zosmf/info`).pipe(
       catchError(e => {
-        let status = e.status;
+        const status = e.status;
         console.log(status);
         if (status === 401) {
           this.showAlert('You are not authorized for this!');
@@ -133,7 +161,8 @@ export class AuthService {
     // const base64Credential: string = btoa( user.username + ':' + user.password);
     // headers.append('Authorization', 'Basic ' + base64Credential);
 
-    let query = `${environment.zosURL}/api/v1/zosmf/restjobs/jobs`;
+    // let query = `${environment.zosURL}/api/v1/zosmf/restjobs/jobs`;
+    let query = `${environment.zosURL}/zosmf/restjobs/jobs`;
     if (searchForm.owner==="") {
         query += '?' + `owner=${environment.user}`;
     } else {
@@ -171,7 +200,7 @@ export class AuthService {
 
   viewJobsData(jobname, jobid) {
     this.load();
-    return this.http.get(`${environment.zosURL}/api/v1/zosmf/restjobs/jobs/${jobname}/${jobid}/files`, {
+    return this.http.get(`${environment.zosURL}/zosmf/restjobs/jobs/${jobname}/${jobid}/files`, {
       headers: {
         'X-CSRF-ZOSMF-HEADER': '',
         'Authorization': 'Basic ' + btoa(environment.user + ':' + environment.pass)
@@ -195,7 +224,7 @@ export class AuthService {
     // const base64Credential: string = btoa( user.username + ':' + user.password);
     // headers.append('Authorization', 'Basic ' + base64Credential);
 
-      return this.http.get(`${environment.zosURL}/api/v1/zosmf/restfiles/ds?dslevel=PRODUCT.TDM.DEMO.*`, {
+      return this.http.get(`${environment.zosURL}/zosmf/restfiles/ds?dslevel=PRODUCT.TDM.DEMO.*`, {
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Basic ' + btoa(environment.user + ':' + environment.pass)
@@ -203,7 +232,7 @@ export class AuthService {
       }).pipe(
       catchError(e => {
         console.log("err", e.status)
-        let status = e.status;
+        const status = e.status;
         if (status === 401) {
           this.showAlert('You are not authorized for this!');
           this.logout();
@@ -223,7 +252,7 @@ export class AuthService {
 
     // console.log("auth_serv: APIML", JSON.stringify(body), headers)
     return this.http.get(
-      `${environment.zosURL}/api/v1/apicatalog/containers`,
+      `${environment.zosURL}/apicatalog/containers`,
       { 
         headers,
         observe: 'response'
@@ -244,7 +273,7 @@ export class AuthService {
   }
 
   showAlert(msg) {
-    let alert = this.alertController.create({
+    const alert = this.alertController.create({
       message: msg,
       header: 'Error',
       buttons: ['OK']
@@ -253,7 +282,7 @@ export class AuthService {
   }
 
   showInfo(msg) {
-    let alert = this.alertController.create({
+    const alert = this.alertController.create({
       message: msg,
       header: 'Information',
       buttons: ['OK']
@@ -262,7 +291,7 @@ export class AuthService {
   }
 
   showGetStarted(msg) {
-    let alert = this.alertController.create({
+    const alert = this.alertController.create({
       message: msg,
       header: 'Welcome',
       buttons: ['Get Started']
@@ -273,7 +302,7 @@ export class AuthService {
   restartJob(jobname, jobid) {
     console.log("restart j", jobname, jobid, this.url, this.port);
     this.load();
-    return this.http.get(`${environment.zosURL}/api/v1/zosmf/restjobs/jobs/${jobname}/${jobid}/files/JCL/records`, {
+    return this.http.get(`${environment.zosURL}/zosmf/restjobs/jobs/${jobname}/${jobid}/files/JCL/records`, {
       headers: {
         'X-CSRF-ZOSMF-HEADER': '',
         'Authorization': 'Basic ' + btoa(environment.user + ':' + environment.pass)
@@ -284,7 +313,7 @@ export class AuthService {
         this.loadingController.dismiss();
       }),
       catchError(e => {
-        let status = e.status;
+        const status = e.status;
         console.log(status)
         this.loadingController.dismiss();
         if (status === 401) {
@@ -299,7 +328,7 @@ export class AuthService {
   submitJob(jobname, jobid, JCLdata) {
     console.log("submit j", jobname, jobid, this.url, this.port);
     this.load();
-    return this.http.post(`${environment.zosURL}/api/v1/jobs/string`, {
+    return this.http.post(`${environment.zosURL}/jobs/string`, {
         "jcl": JCLdata
       }, {observe: 'response',
       headers: {
@@ -321,7 +350,7 @@ export class AuthService {
   }
   getJobInfo(jobname, jobid) {
     // Getting basic info about one job
-    const query = `${environment.zosURL}/api/v1/zosmf/restjobs/jobs/${jobname}/${jobid}`;
+    const query = `${environment.zosURL}/zosmf/restjobs/jobs/${jobname}/${jobid}`;
     console.log(query);
     this.load();
     return this.http.get(query, {
