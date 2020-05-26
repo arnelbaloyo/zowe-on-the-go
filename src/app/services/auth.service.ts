@@ -156,10 +156,16 @@ export class AuthService {
   }
 
   getJobsData(searchForm) {
-    // const headers = new HttpHeaders();
-    // headers.append('Accept', 'application/json')
-    // const base64Credential: string = btoa( user.username + ':' + user.password);
-    // headers.append('Authorization', 'Basic ' + base64Credential);
+    const newHeaders = new HttpHeaders();
+    newHeaders.append('Accept', 'application/json');
+    const base64Credential: string = btoa(environment.user + ':' + environment.pass);
+    newHeaders.append('Authorization', 'Basic ' + base64Credential);
+    newHeaders.append('Access-Control_Allow-Origin', '*');
+    newHeaders.append('Access-Control-Allow-Methods', 'GET, POST, PUT');
+    newHeaders.append('Access-Control-Allow-Headers', '*');
+    newHeaders.append('Access-Control-Expose-Headers', '*');
+    newHeaders.append('Access-Control-Allow-Credentials', 'true');
+    newHeaders.append('X-CSRF-ZOSMF-HEADER', '');
 
     // let query = `${environment.zosURL}/api/v1/zosmf/restjobs/jobs`;
     let query = `${environment.zosURL}/zosmf/restjobs/jobs`;
@@ -177,12 +183,15 @@ export class AuthService {
     console.log(query);
 
     this.load();
+    // return this.http.get(query, {
+    //   observe: 'response',
+    //   headers: {
+    //     Authorization: 'Basic ' + btoa(environment.user + ':' + environment.pass),
+    //     'X-CSRF-ZOSMF-HEADER': ''
+    //   }
     return this.http.get(query, {
       observe: 'response',
-      headers: {
-        Authorization: 'Basic ' + btoa(environment.user + ':' + environment.pass),
-        'X-CSRF-ZOSMF-HEADER': ''
-      }
+      headers: newHeaders
     }).pipe(
         tap(res => {
           this.loadingController.dismiss();
@@ -193,6 +202,7 @@ export class AuthService {
         }),
         catchError(e => {
           this.loadingController.dismiss();
+          console.log(environment.pass)
           return throwError(e);
         })
     );

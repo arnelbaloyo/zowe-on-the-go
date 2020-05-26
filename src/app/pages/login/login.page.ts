@@ -30,7 +30,7 @@ export class LoginPage implements OnInit {
   ngOnInit() {
 
     this.credentialsForm = this.formBuilder.group({
-    username: ['', [Validators.required, Validators.minLength(7)]],
+    username: ['', [Validators.required, Validators.minLength(1)]],
     password: ['', [Validators.required, Validators.minLength(6)]],
     url:      [''],
     });
